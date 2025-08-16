@@ -10,15 +10,6 @@ function loadQuotes() {
   return storedQuotes ? JSON.parse(storedQuotes) : null;
 }
 
-function saveLastViewed(quote) {
-  sessionStorage.setItem("lastViewedQuote", JSON.stringify(quote));
-}
-
-function getLastViewed() {
-  const stored = sessionStorage.getItem("lastViewedQuote");
-  return stored ? JSON.parse(stored) : null;
-}
-
 function saveLastFilter(category) {
   localStorage.setItem("lastSelectedCategory", category);
 }
@@ -31,10 +22,12 @@ function getLastFilter() {
 // INITIAL QUOTES
 // ===============================
 let quotes = loadQuotes() || [
-  { text: "The best way to predict the future is to invent it.", category: "Inspiration" },
-  { text: "Code is like humor. When you have to explain it, it’s bad.", category: "Programming" },
-  { text: "Do not wait to strike till the iron is hot, but make it hot by striking.", category: "Motivation" },
+  { id: 1, text: "The best way to predict the future is to invent it.", category: "Inspiration" },
+  { id: 2, text: "Code is like humor. When you have to explain it, it’s bad.", category: "Programming" },
+  { id: 3, text: "Do not wait to strike till the iron is hot, but make it hot by striking.", category: "Motivation" },
 ];
+
+let serverQuotes = []; // Simulated server-side state
 
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
@@ -67,9 +60,6 @@ function showRandomQuote() {
     <p>"${randomQuote.text}"</p>
     <p class="category">- ${randomQuote.category}</p>
   `;
-
-  // Save last viewed to session storage
-  saveLastViewed(randomQuote);
 }
 
 function addQuote() {
@@ -81,16 +71,22 @@ function addQuote() {
     return;
   }
 
-  quotes.push({ text, category });
+  const newQuote = {
+    id: Date.now(), // Unique ID for conflict resolution
+    text,
+    category
+  };
+
+  quotes.push(newQuote);
   saveQuotes();
 
-  // Update categories
-  populateCategories();
+  // Send to server (simulated POST)
+  syncWithServer("POST", newQuote);
 
+  populateCategories();
+  alert("Quote added successfully!");
   newQuoteText.value = "";
   newQuoteCategory.value = "";
-
-  alert("Quote added successfully!");
 }
 
 // ===============================
@@ -107,9 +103,7 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
 
-  // Restore last filter
-  const lastFilter = getLastFilter();
-  categoryFilter.value = lastFilter;
+  categoryFilter.value = getLastFilter();
 }
 
 function filterQuotes() {
@@ -125,7 +119,6 @@ function filterQuotes() {
     return;
   }
 
-  // Display the first matching quote by default
   const firstQuote = filteredQuotes[0];
   quoteDisplay.innerHTML = `
     <p>"${firstQuote.text}"</p>
@@ -134,7 +127,71 @@ function filterQuotes() {
 }
 
 // ===============================
+// SERVER SYNC (SIMULATION)
+// ===============================
+async function syncWithServer(method = "GET", data = null) {
+  try {
+    if (method === "GET") {
+      // Simulate server fetch (using JSONPlaceholder)
+      const response = await fetch("https://jsonplaceholder.typicode.com/posts?_limit=5");
+      const serverData = await response.json();
+
+      // Convert to quote-like objects
+      serverQuotes = serverData.map(item => ({
+        id: item.id,
+        text: item.title,
+        category: "ServerData"
+      }));
+
+      resolveConflicts();
+    }
+
+    if (method === "POST" && data) {
+      // Simulate sending new quote
+      await fetch("https://jsonplaceholder.typicode.com/posts", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-type": "application/json; charset=UTF-8" }
+      });
+      console.log("Quote synced to server:", data);
+    }
+  } catch (err) {
+    console.error("Sync error:", err);
+  }
+}
+
+// Conflict resolution: server > local (server wins)
+function resolveConflicts() {
+  let merged = [...quotes];
+
+  serverQuotes.forEach(sq => {
+    const exists = merged.find(lq => lq.id === sq.id);
+    if (exists) {
+      // Conflict: overwrite local with server
+      Object.assign(exists, sq);
+      notifyConflict(sq);
+    } else {
+      merged.push(sq);
+    }
+  });
+
+  quotes = merged;
+  saveQuotes();
+  populateCategories();
+  filterQuotes();
+}
+
+// Notify user of conflict resolution
+function notifyConflict(quote) {
+  alert(`Conflict resolved: Updated quote from server - "${quote.text}"`);
+}
+
+// Periodic sync every 20 seconds
+setInterval(() => syncWithServer("GET"), 20000);
+
+// ===============================
 // JSON IMPORT / EXPORT
+// (same as before)
 // ===============================
 function exportQuotes() {
   const dataStr = JSON.stringify(quotes, null, 2);
@@ -183,3 +240,4 @@ importFile.addEventListener("change", importFromJsonFile);
 // ===============================
 populateCategories();
 filterQuotes();
+syncWithServer("GET"); // Initial fetch
