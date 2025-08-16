@@ -5,33 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dynamic Quote Generator</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
     #quoteDisplay {
-      margin: 20px 0;
-      padding: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-style: italic;
-      min-height: 50px;
+      margin: 20px 0; padding: 15px; border: 1px solid #ccc;
+      border-radius: 8px; font-style: italic; min-height: 50px;
     }
-    .category {
-      font-weight: bold;
-      color: #444;
+    .category { font-weight: bold; color: #444; }
+    .notification {
+      display: none; padding: 10px; margin-bottom: 15px;
+      border-radius: 5px; font-size: 14px;
     }
-    .controls {
-      margin-top: 20px;
-    }
-    input, select, button {
-      margin: 5px;
-      padding: 8px;
-    }
+    .info { background: #e0f7fa; color: #006064; }
+    .warning { background: #fff3e0; color: #e65100; }
   </style>
 </head>
 <body>
   <h1>Dynamic Quote Generator</h1>
+
+  <!-- Notifications -->
+  <div id="notification" class="notification"></div>
 
   <!-- Quote display -->
   <div id="quoteDisplay"></div>
@@ -48,12 +40,12 @@
   <!-- Category filter -->
   <h2>Filter by Category</h2>
   <select id="categoryFilter" onchange="filterQuotes()">
-    <option value="all">All</option>
+    <option value="all">All Categories</option>
   </select>
 
   <!-- JSON Import/Export -->
   <h2>Import / Export Quotes</h2>
-  <div class="controls">
+  <div>
     <button id="exportBtn">Export Quotes (JSON)</button>
     <input type="file" id="importFile" accept=".json" />
   </div>
